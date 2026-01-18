@@ -236,7 +236,5 @@ source "drivers/counter/Kconfig"
 
 source "drivers/most/Kconfig"
 
-source "drivers/knox/Kconfig"
-
 source "drivers/spu_verify/Kconfig"
 endmenu

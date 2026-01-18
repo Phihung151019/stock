@@ -3,7 +3,7 @@
 config INTEGRITY
 	bool "Integrity subsystem"
 	depends on SECURITY
-	default y
+	default n
 	help
 	  This option enables the integrity subsystem, which is comprised
 	  of a number of different components including the Integrity
@@ -46,7 +46,7 @@ config INTEGRITY_TRUSTED_KEYRING
 	bool "Require all keys on the integrity keyrings be signed"
 	depends on SYSTEM_TRUSTED_KEYRING
 	depends on INTEGRITY_ASYMMETRIC_KEYS
-	default y
+	default n
 	help
 	   This option requires that all keys added to the .ima and
 	   .evm keyrings be signed by a key on the system trusted
@@ -65,7 +65,7 @@ config INTEGRITY_PLATFORM_KEYRING
 config LOAD_UEFI_KEYS
        depends on INTEGRITY_PLATFORM_KEYRING
        depends on EFI
-       def_bool y
+       def_bool n
 
 config LOAD_IPL_KEYS
        depends on INTEGRITY_PLATFORM_KEYRING
@@ -76,7 +76,7 @@ config LOAD_PPC_KEYS
 	bool "Enable loading of platform and blacklisted keys for POWER"
 	depends on INTEGRITY_PLATFORM_KEYRING
 	depends on PPC_SECURE_BOOT
-	default y
+	default n
 	help
 	  Enable loading of keys to the .platform keyring and blacklisted
 	  hashes to the .blacklist keyring for powerpc based platforms.
@@ -84,7 +84,7 @@ config LOAD_PPC_KEYS
 config INTEGRITY_AUDIT
 	bool "Enables integrity auditing support "
 	depends on AUDIT
-	default y
+	default n
 	help
 	  In addition to enabling integrity auditing support, this
 	  option adds a kernel parameter 'integrity_audit', which

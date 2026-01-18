@@ -195,7 +195,6 @@ obj-$(CONFIG_MOST)		+= most/
 obj-$(CONFIG_SPU_VERIFY)        += spu_verify/
 obj-y				+= switch/
 obj-y                          += samsung/
-obj-$(CONFIG_UH)		+= uh/
 obj-y += regulator/pmic_class/ # ADDED BY LEGO AUTOMATICALLY: DO NOT SUBMIT
 obj-y += misc/drb/ # ADDED BY LEGO AUTOMATICALLY: DO NOT SUBMIT
 obj-y += sec_panel_notifier/ # ADDED BY LEGO AUTOMATICALLY: DO NOT SUBMIT
