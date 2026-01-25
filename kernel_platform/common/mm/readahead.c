@@ -28,6 +28,13 @@
 #include "internal.h"
 
 /*
+ * Tail-latency oriented readahead tuning
+ */
+#define RA_TAIL_LAT_MAX_PAGES 64
+#define RA_TAIL_LAT_FORCE_CHUNK_PAGES ((256 * 1024) / PAGE_SIZE)
+
+
+/*
  * Initialise a struct file's readahead state.  Assumes that the caller has
  * memset *ra to zero.
  */
@@ -305,7 +312,7 @@ void force_page_cache_ra(struct readahead_control *ractl,
 	max_pages = max_t(unsigned long, bdi->io_pages, ra->ra_pages);
 	nr_to_read = min_t(unsigned long, nr_to_read, max_pages);
 	while (nr_to_read) {
-		unsigned long this_chunk = (2 * 1024 * 1024) / PAGE_SIZE;
+		unsigned long this_chunk = RA_TAIL_LAT_FORCE_CHUNK_PAGES;
 
 		if (this_chunk > nr_to_read)
 			this_chunk = nr_to_read;
@@ -327,12 +334,12 @@ static unsigned long get_init_ra_size(unsigned long size, unsigned long max)
 {
 	unsigned long newsize = roundup_pow_of_two(size);
 
-	if (newsize <= max / 32)
-		newsize = newsize * 4;
-	else if (newsize <= max / 4)
+	if (newsize < max / 16)
 		newsize = newsize * 2;
+	else if (newsize < max / 4)
+		newsize = min(newsize * 2, max);
 	else
-		newsize = max;
+		newsize = min(newsize, max);
 
 	return newsize;
 }
@@ -346,10 +353,10 @@ static unsigned long get_next_ra_size(struct file_ra_state *ra,
 {
 	unsigned long cur = ra->size;
 
-	if (cur < max / 16)
-		return 4 * cur;
-	if (cur <= max / 2)
-		return 2 * cur;
+	if (cur < max / 8)
+		return min(cur * 2, max);
+	if (cur < max)
+		return min(cur + (cur >> 1), max);
 	return max;
 }
 
@@ -435,7 +442,7 @@ static int try_context_readahead(struct address_space *mapping,
 	 * it is a strong indication of long-run stream (or whole-file-read)
 	 */
 	if (size >= index)
-		size *= 2;
+		size += size >> 1;
 
 	ra->start = index;
 	ra->size = min(size + req_size, max);
@@ -465,6 +472,7 @@ static void ondemand_readahead(struct readahead_control *ractl,
 		max_pages = min(req_size, bdi->io_pages);
 
 	trace_android_vh_ra_tuning_max_page(ractl, &max_pages);
+	max_pages = min_t(unsigned long, max_pages, max_t(unsigned long, req_size, RA_TAIL_LAT_MAX_PAGES));
 
 	/*
 	 * start of file

@@ -1017,37 +1017,49 @@ static int kdamond_fn(void *data)
 	sz_limit = damon_region_sz_limit(ctx);
 
 	while (!kdamond_need_stop(ctx) && !done) {
+		typeof(ctx->primitive.prepare_access_checks) prepare_access_checks;
+		typeof(ctx->primitive.check_accesses) check_accesses;
+		typeof(ctx->primitive.reset_aggregated) reset_aggregated;
+		typeof(ctx->primitive.update) primitive_update;
+		typeof(ctx->callback.after_sampling) cb_after_sampling;
+		typeof(ctx->callback.after_aggregation) cb_after_aggregation;
+
 		if (kdamond_wait_activation(ctx))
 			continue;
 
-		if (ctx->primitive.prepare_access_checks)
-			ctx->primitive.prepare_access_checks(ctx);
-		if (ctx->callback.after_sampling &&
-				ctx->callback.after_sampling(ctx))
+		prepare_access_checks = ctx->primitive.prepare_access_checks;
+		check_accesses = ctx->primitive.check_accesses;
+		reset_aggregated = ctx->primitive.reset_aggregated;
+		primitive_update = ctx->primitive.update;
+		cb_after_sampling = ctx->callback.after_sampling;
+		cb_after_aggregation = ctx->callback.after_aggregation;
+
+		if (prepare_access_checks)
+			prepare_access_checks(ctx);
+		if (cb_after_sampling && cb_after_sampling(ctx))
 			done = true;
 
 		kdamond_usleep(ctx->sample_interval);
 
-		if (ctx->primitive.check_accesses)
-			max_nr_accesses = ctx->primitive.check_accesses(ctx);
+		if (check_accesses)
+			max_nr_accesses = check_accesses(ctx);
 
 		if (kdamond_aggregate_interval_passed(ctx)) {
 			kdamond_merge_regions(ctx,
 					max_nr_accesses / 10,
 					sz_limit);
-			if (ctx->callback.after_aggregation &&
-					ctx->callback.after_aggregation(ctx))
+			if (cb_after_aggregation && cb_after_aggregation(ctx))
 				done = true;
 			kdamond_apply_schemes(ctx);
 			kdamond_reset_aggregated(ctx);
 			kdamond_split_regions(ctx);
-			if (ctx->primitive.reset_aggregated)
-				ctx->primitive.reset_aggregated(ctx);
+			if (reset_aggregated)
+				reset_aggregated(ctx);
 		}
 
 		if (kdamond_need_update_primitive(ctx)) {
-			if (ctx->primitive.update)
-				ctx->primitive.update(ctx);
+			if (primitive_update)
+				primitive_update(ctx);
 			sz_limit = damon_region_sz_limit(ctx);
 		}
 	}

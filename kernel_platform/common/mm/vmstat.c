@@ -186,9 +186,9 @@ int calculate_pressure_threshold(struct zone *zone)
 	threshold = max(1, (int)(watermark_distance / num_online_cpus()));
 
 	/*
-	 * Maximum threshold is 125
+	 * Maximum threshold is 255
 	 */
-	threshold = min(125, threshold);
+	threshold = min(255, threshold);
 
 	return threshold;
 }

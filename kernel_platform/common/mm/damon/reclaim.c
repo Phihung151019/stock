@@ -342,7 +342,7 @@ free_region_out:
 	return err;
 }
 
-#define ENABLE_CHECK_INTERVAL_MS	1000
+#define ENABLE_CHECK_INTERVAL_MS	5000
 static struct delayed_work damon_reclaim_timer;
 static void damon_reclaim_timer_fn(struct work_struct *work)
 {

@@ -1756,8 +1756,10 @@ static unsigned long isolate_lru_pages(unsigned long nr_to_scan,
 	scan = 0;
 	while (scan < nr_to_scan && !list_empty(src)) {
 		struct page *page;
+		int zone;
 
 		page = lru_to_page(src);
+		zone = page_zonenum(page);
 		prefetchw_prev_lru_page(page, src, flags);
 
 		VM_BUG_ON_PAGE(!PageLRU(page), page);
@@ -1765,13 +1767,13 @@ static unsigned long isolate_lru_pages(unsigned long nr_to_scan,
 		nr_pages = compound_nr(page);
 		total_scan += nr_pages;
 #ifdef CONFIG_HUGEPAGE_POOL
-		if (page_zonenum(page) > sc->reclaim_idx
+		if (zone > sc->reclaim_idx
 		    || PageTransHuge(page)) {
 #else
-		if (page_zonenum(page) > sc->reclaim_idx) {
+		if (zone > sc->reclaim_idx) {
 #endif
 			list_move(&page->lru, &pages_skipped);
-			nr_skipped[page_zonenum(page)] += nr_pages;
+			nr_skipped[zone] += nr_pages;
 			continue;
 		}
 
@@ -1789,7 +1791,7 @@ static unsigned long isolate_lru_pages(unsigned long nr_to_scan,
 		switch (__isolate_lru_page(page, mode)) {
 		case 0:
 			nr_taken += nr_pages;
-			nr_zone_taken[page_zonenum(page)] += nr_pages;
+			nr_zone_taken[zone] += nr_pages;
 			trace_android_vh_del_page_from_lrulist(page, false, lru);
 			list_move(&page->lru, dst);
 			break;
