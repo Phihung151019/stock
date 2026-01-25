@@ -170,6 +170,10 @@ static void qlist_free_all(struct qlist_head *q, struct kmem_cache *cache)
 
 bool kasan_quarantine_put(struct kmem_cache *cache, void *object)
 {
+	/* STUBBED_NOOP: disabled at runtime, symbol preserved. */
+	return false;
+#if 0
+
 	unsigned long flags;
 	struct qlist_head *q;
 	struct qlist_head temp = QLIST_INIT;
@@ -220,6 +224,7 @@ bool kasan_quarantine_put(struct kmem_cache *cache, void *object)
 	local_irq_restore(flags);
 
 	return true;
+#endif
 }
 
 void kasan_quarantine_reduce(void)

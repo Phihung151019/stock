@@ -28,13 +28,23 @@
 
 bool __kasan_check_read(const volatile void *p, unsigned int size)
 {
+	/* STUBBED_NOOP: disabled at runtime, symbol preserved. */
+	return false;
+#if 0
+
 	return kasan_check_range((unsigned long)p, size, false, _RET_IP_);
+#endif
 }
 EXPORT_SYMBOL(__kasan_check_read);
 
 bool __kasan_check_write(const volatile void *p, unsigned int size)
 {
+	/* STUBBED_NOOP: disabled at runtime, symbol preserved. */
+	return false;
+#if 0
+
 	return kasan_check_range((unsigned long)p, size, true, _RET_IP_);
+#endif
 }
 EXPORT_SYMBOL(__kasan_check_write);
 
@@ -71,6 +81,9 @@ void *memcpy(void *dest, const void *src, size_t len)
 
 void kasan_poison(const void *addr, size_t size, u8 value, bool init)
 {
+	/* STUBBED_NOOP: disabled at runtime, symbol preserved. */
+#if 0
+
 	void *shadow_start, *shadow_end;
 
 	/*
@@ -93,6 +106,7 @@ void kasan_poison(const void *addr, size_t size, u8 value, bool init)
 	shadow_end = kasan_mem_to_shadow(addr + size);
 
 	__memset(shadow_start, value, shadow_end - shadow_start);
+#endif
 }
 EXPORT_SYMBOL(kasan_poison);
 

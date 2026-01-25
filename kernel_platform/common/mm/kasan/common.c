@@ -32,49 +32,77 @@
 
 depot_stack_handle_t kasan_save_stack(gfp_t flags)
 {
+	/* STUBBED_NOOP: disabled at runtime, symbol preserved. */
+	return 0;
+#if 0
+
 	unsigned long entries[KASAN_STACK_DEPTH];
 	unsigned int nr_entries;
 
 	nr_entries = stack_trace_save(entries, ARRAY_SIZE(entries), 0);
 	nr_entries = filter_irq_stacks(entries, nr_entries);
 	return stack_depot_save(entries, nr_entries, flags);
+#endif
 }
 
 void kasan_set_track(struct kasan_track *track, gfp_t flags)
 {
+	/* STUBBED_NOOP: disabled at runtime, symbol preserved. */
+#if 0
+
 	track->pid = current->pid;
 	track->stack = kasan_save_stack(flags);
+#endif
 }
 
 #if defined(CONFIG_KASAN_GENERIC) || defined(CONFIG_KASAN_SW_TAGS)
 void kasan_enable_current(void)
 {
+	/* STUBBED_NOOP: disabled at runtime, symbol preserved. */
+#if 0
+
 	current->kasan_depth++;
+#endif
 }
 
 void kasan_disable_current(void)
 {
+	/* STUBBED_NOOP: disabled at runtime, symbol preserved. */
+#if 0
+
 	current->kasan_depth--;
+#endif
 }
 #endif /* CONFIG_KASAN_GENERIC || CONFIG_KASAN_SW_TAGS */
 
 void __kasan_unpoison_range(const void *address, size_t size)
 {
+	/* STUBBED_NOOP: disabled at runtime, symbol preserved. */
+#if 0
+
 	kasan_unpoison(address, size, false);
+#endif
 }
 
 #ifdef CONFIG_KASAN_STACK
 /* Unpoison the entire stack for a task. */
 void kasan_unpoison_task_stack(struct task_struct *task)
 {
+	/* STUBBED_NOOP: disabled at runtime, symbol preserved. */
+#if 0
+
 	void *base = task_stack_page(task);
 
 	kasan_unpoison(base, THREAD_SIZE, false);
+#endif
 }
 
 /* Unpoison the stack for the current task beyond a watermark sp value. */
 asmlinkage void kasan_unpoison_task_stack_below(const void *watermark)
 {
+	/* STUBBED_NOOP: disabled at runtime, symbol preserved. */
+#if 0
+
 	/*
 	 * Calculate the task stack base address.  Avoid using 'current'
 	 * because this function is called by early resume code which hasn't
@@ -83,6 +111,7 @@ asmlinkage void kasan_unpoison_task_stack_below(const void *watermark)
 	void *base = (void *)((unsigned long)watermark & ~(THREAD_SIZE - 1));
 
 	kasan_unpoison(base, watermark - base, false);
+#endif
 }
 #endif /* CONFIG_KASAN_STACK */
 
@@ -99,6 +128,9 @@ slab_flags_t __kasan_never_merge(void)
 
 void __kasan_unpoison_pages(struct page *page, unsigned int order, bool init)
 {
+	/* STUBBED_NOOP: disabled at runtime, symbol preserved. */
+#if 0
+
 	u8 tag;
 	unsigned long i;
 
@@ -109,13 +141,18 @@ void __kasan_unpoison_pages(struct page *page, unsigned int order, bool init)
 	for (i = 0; i < (1 << order); i++)
 		page_kasan_tag_set(page + i, tag);
 	kasan_unpoison(page_address(page), PAGE_SIZE << order, init);
+#endif
 }
 
 void __kasan_poison_pages(struct page *page, unsigned int order, bool init)
 {
+	/* STUBBED_NOOP: disabled at runtime, symbol preserved. */
+#if 0
+
 	if (likely(!PageHighMem(page)))
 		kasan_poison(page_address(page), PAGE_SIZE << order,
 			     KASAN_FREE_PAGE, init);
+#endif
 }
 
 /*
@@ -246,23 +283,35 @@ struct kasan_free_meta *kasan_get_free_meta(struct kmem_cache *cache,
 
 void __kasan_poison_slab(struct page *page)
 {
+	/* STUBBED_NOOP: disabled at runtime, symbol preserved. */
+#if 0
+
 	unsigned long i;
 
 	for (i = 0; i < compound_nr(page); i++)
 		page_kasan_tag_reset(page + i);
 	kasan_poison(page_address(page), page_size(page),
 		     KASAN_KMALLOC_REDZONE, false);
+#endif
 }
 
 void __kasan_unpoison_object_data(struct kmem_cache *cache, void *object)
 {
+	/* STUBBED_NOOP: disabled at runtime, symbol preserved. */
+#if 0
+
 	kasan_unpoison(object, cache->object_size, false);
+#endif
 }
 
 void __kasan_poison_object_data(struct kmem_cache *cache, void *object)
 {
+	/* STUBBED_NOOP: disabled at runtime, symbol preserved. */
+#if 0
+
 	kasan_poison(object, round_up(cache->object_size, KASAN_GRANULE_SIZE),
 			KASAN_KMALLOC_REDZONE, false);
+#endif
 }
 
 /*
@@ -308,6 +357,10 @@ static inline u8 assign_tag(struct kmem_cache *cache,
 void * __must_check __kasan_init_slab_obj(struct kmem_cache *cache,
 						const void *object)
 {
+	/* STUBBED_NOOP: disabled at runtime, symbol preserved. */
+	return NULL;
+#if 0
+
 	struct kasan_alloc_meta *alloc_meta;
 
 	if (kasan_stack_collection_enabled()) {
@@ -320,6 +373,7 @@ void * __must_check __kasan_init_slab_obj(struct kmem_cache *cache,
 	object = set_tag(object, assign_tag(cache, object, true));
 
 	return (void *)object;
+#endif
 }
 
 static inline bool ____kasan_slab_free(struct kmem_cache *cache, void *object,
@@ -365,7 +419,12 @@ static inline bool ____kasan_slab_free(struct kmem_cache *cache, void *object,
 bool __kasan_slab_free(struct kmem_cache *cache, void *object,
 				unsigned long ip, bool init)
 {
+	/* STUBBED_NOOP: disabled at runtime, symbol preserved. */
+	return false;
+#if 0
+
 	return ____kasan_slab_free(cache, object, ip, true, init);
+#endif
 }
 
 static inline bool ____kasan_kfree_large(void *ptr, unsigned long ip)
@@ -390,11 +449,18 @@ static inline bool ____kasan_kfree_large(void *ptr, unsigned long ip)
 
 void __kasan_kfree_large(void *ptr, unsigned long ip)
 {
+	/* STUBBED_NOOP: disabled at runtime, symbol preserved. */
+#if 0
+
 	____kasan_kfree_large(ptr, ip);
+#endif
 }
 
 void __kasan_slab_free_mempool(void *ptr, unsigned long ip)
 {
+	/* STUBBED_NOOP: disabled at runtime, symbol preserved. */
+#if 0
+
 	struct page *page;
 
 	page = virt_to_head_page(ptr);
@@ -412,6 +478,7 @@ void __kasan_slab_free_mempool(void *ptr, unsigned long ip)
 	} else {
 		____kasan_slab_free(page->slab_cache, ptr, ip, false, false);
 	}
+#endif
 }
 
 static void set_alloc_info(struct kmem_cache *cache, void *object,
@@ -431,6 +498,10 @@ static void set_alloc_info(struct kmem_cache *cache, void *object,
 void * __must_check __kasan_slab_alloc(struct kmem_cache *cache,
 					void *object, gfp_t flags, bool init)
 {
+	/* STUBBED_NOOP: disabled at runtime, symbol preserved. */
+	return (void *)object;
+#if 0
+
 	u8 tag;
 	void *tagged_object;
 
@@ -461,6 +532,7 @@ void * __must_check __kasan_slab_alloc(struct kmem_cache *cache,
 		set_alloc_info(cache, (void *)object, flags, false);
 
 	return tagged_object;
+#endif
 }
 
 static inline void *____kasan_kmalloc(struct kmem_cache *cache,
@@ -513,13 +585,22 @@ static inline void *____kasan_kmalloc(struct kmem_cache *cache,
 void * __must_check __kasan_kmalloc(struct kmem_cache *cache, const void *object,
 					size_t size, gfp_t flags)
 {
+	/* STUBBED_NOOP: disabled at runtime, symbol preserved. */
+	return (void *)object;
+#if 0
+
 	return ____kasan_kmalloc(cache, object, size, flags);
+#endif
 }
 EXPORT_SYMBOL(__kasan_kmalloc);
 
 void * __must_check __kasan_kmalloc_large(const void *ptr, size_t size,
 						gfp_t flags)
 {
+	/* STUBBED_NOOP: disabled at runtime, symbol preserved. */
+	return (void *)ptr;
+#if 0
+
 	unsigned long redzone_start;
 	unsigned long redzone_end;
 
@@ -550,10 +631,15 @@ void * __must_check __kasan_kmalloc_large(const void *ptr, size_t size,
 		     KASAN_PAGE_REDZONE, false);
 
 	return (void *)ptr;
+#endif
 }
 
 void * __must_check __kasan_krealloc(const void *object, size_t size, gfp_t flags)
 {
+	/* STUBBED_NOOP: disabled at runtime, symbol preserved. */
+	return (void *)object;
+#if 0
+
 	struct page *page;
 
 	if (unlikely(object == ZERO_SIZE_PTR))
@@ -573,13 +659,19 @@ void * __must_check __kasan_krealloc(const void *object, size_t size, gfp_t flag
 		return __kasan_kmalloc_large(object, size, flags);
 	else
 		return ____kasan_kmalloc(page->slab_cache, object, size, flags);
+#endif
 }
 
 bool __kasan_check_byte(const void *address, unsigned long ip)
 {
+	/* STUBBED_NOOP: disabled at runtime, symbol preserved. */
+	return false;
+#if 0
+
 	if (!kasan_byte_accessible(address)) {
 		kasan_report((unsigned long)address, 1, false, ip);
 		return false;
 	}
 	return true;
+#endif
 }

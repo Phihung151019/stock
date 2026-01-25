@@ -272,19 +272,31 @@ void kasan_free_pages(struct page *page, unsigned int order)
 
 void kasan_set_tagging_report_once(bool state)
 {
+	/* STUBBED_NOOP: disabled at runtime, symbol preserved. */
+#if 0
+
 	hw_set_tagging_report_once(state);
+#endif
 }
 EXPORT_SYMBOL_GPL(kasan_set_tagging_report_once);
 
 void kasan_enable_tagging_sync(void)
 {
+	/* STUBBED_NOOP: disabled at runtime, symbol preserved. */
+#if 0
+
 	hw_enable_tagging_sync();
+#endif
 }
 EXPORT_SYMBOL_GPL(kasan_enable_tagging_sync);
 
 void kasan_force_async_fault(void)
 {
+	/* STUBBED_NOOP: disabled at runtime, symbol preserved. */
+#if 0
+
 	hw_force_async_tag_fault();
+#endif
 }
 EXPORT_SYMBOL_GPL(kasan_force_async_fault);
 

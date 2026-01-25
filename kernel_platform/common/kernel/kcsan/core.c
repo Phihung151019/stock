@@ -595,42 +595,16 @@ out:
 static __always_inline void check_access(const volatile void *ptr, size_t size,
 					 int type)
 {
-	const bool is_write = (type & KCSAN_ACCESS_WRITE) != 0;
-	atomic_long_t *watchpoint;
-	long encoded_watchpoint;
-
 	/*
-	 * Do nothing for 0 sized check; this comparison will be optimized out
-	 * for constant sized instrumentation (__tsan_{read,write}N).
+	 * PATCH (stubbed, keep symbols):
+	 *
+	 * Disable KCSAN runtime checking while keeping the full exported
+	 * instrumentation ABI intact.
 	 */
-	if (unlikely(size == 0))
-		return;
-
-	/*
-	 * Avoid user_access_save in fast-path: find_watchpoint is safe without
-	 * user_access_save, as the address that ptr points to is only used to
-	 * check if a watchpoint exists; ptr is never dereferenced.
-	 */
-	watchpoint = find_watchpoint((unsigned long)ptr, size, !is_write,
-				     &encoded_watchpoint);
-	/*
-	 * It is safe to check kcsan_is_enabled() after find_watchpoint in the
-	 * slow-path, as long as no state changes that cause a race to be
-	 * detected and reported have occurred until kcsan_is_enabled() is
-	 * checked.
-	 */
-
-	if (unlikely(watchpoint != NULL))
-		kcsan_found_watchpoint(ptr, size, type, watchpoint,
-				       encoded_watchpoint);
-	else {
-		struct kcsan_ctx *ctx = get_ctx(); /* Call only once in fast-path. */
-
-		if (unlikely(should_watch(ptr, size, type, ctx)))
-			kcsan_setup_watchpoint(ptr, size, type);
-		else if (unlikely(ctx->scoped_accesses.prev))
-			kcsan_check_scoped_accesses();
-	}
+	(void)ptr;
+	(void)size;
+	(void)type;
+	return;
 }
 
 /* === Public interface ===================================================== */

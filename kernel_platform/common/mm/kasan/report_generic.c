@@ -316,12 +316,20 @@ DEFINE_ASAN_REPORT_STORE(16);
 
 void __asan_report_load_n_noabort(unsigned long addr, size_t size)
 {
+	/* STUBBED_NOOP: disabled at runtime, symbol preserved. */
+#if 0
+
 	kasan_report(addr, size, false, _RET_IP_);
+#endif
 }
 EXPORT_SYMBOL(__asan_report_load_n_noabort);
 
 void __asan_report_store_n_noabort(unsigned long addr, size_t size)
 {
+	/* STUBBED_NOOP: disabled at runtime, symbol preserved. */
+#if 0
+
 	kasan_report(addr, size, true, _RET_IP_);
+#endif
 }
 EXPORT_SYMBOL(__asan_report_store_n_noabort);

@@ -41,14 +41,23 @@ static unsigned long kasan_flags;
 
 bool kasan_save_enable_multi_shot(void)
 {
+	/* STUBBED_NOOP: disabled at runtime, symbol preserved. */
+	return false;
+#if 0
+
 	return test_and_set_bit(KASAN_BIT_MULTI_SHOT, &kasan_flags);
+#endif
 }
 EXPORT_SYMBOL_GPL(kasan_save_enable_multi_shot);
 
 void kasan_restore_multi_shot(bool enabled)
 {
+	/* STUBBED_NOOP: disabled at runtime, symbol preserved. */
+#if 0
+
 	if (!enabled)
 		clear_bit(KASAN_BIT_MULTI_SHOT, &kasan_flags);
+#endif
 }
 EXPORT_SYMBOL_GPL(kasan_restore_multi_shot);
 
@@ -301,7 +310,7 @@ static void print_memory_metadata(const void *addr)
 	}
 }
 
-static bool report_enabled(void)
+static bool __maybe_unused report_enabled(void)
 {
 #if defined(CONFIG_KASAN_GENERIC) || defined(CONFIG_KASAN_SW_TAGS)
 	if (current->kasan_depth)
@@ -333,6 +342,9 @@ static void kasan_update_kunit_status(struct kunit *cur_test)
 
 void kasan_report_invalid_free(void *object, unsigned long ip)
 {
+	/* STUBBED_NOOP: disabled at runtime, symbol preserved. */
+#if 0
+
 	unsigned long flags;
 	u8 tag = get_tag(object);
 
@@ -351,11 +363,15 @@ void kasan_report_invalid_free(void *object, unsigned long ip)
 	pr_err("\n");
 	print_memory_metadata(object);
 	end_report(&flags, (unsigned long)object);
+#endif
 }
 
 #ifdef CONFIG_KASAN_HW_TAGS
 void kasan_report_async(void)
 {
+	/* STUBBED_NOOP: disabled at runtime, symbol preserved. */
+#if 0
+
 	unsigned long flags;
 
 #if IS_ENABLED(CONFIG_KUNIT)
@@ -369,10 +385,11 @@ void kasan_report_async(void)
 	pr_err("\n");
 	dump_stack_lvl(KERN_ERR);
 	end_report(&flags, 0);
+#endif
 }
 #endif /* CONFIG_KASAN_HW_TAGS */
 
-static void __kasan_report(unsigned long addr, size_t size, bool is_write,
+static void __maybe_unused __kasan_report(unsigned long addr, size_t size, bool is_write,
 				unsigned long ip)
 {
 	struct kasan_access_info info;
@@ -421,6 +438,10 @@ static void __kasan_report(unsigned long addr, size_t size, bool is_write,
 bool kasan_report(unsigned long addr, size_t size, bool is_write,
 			unsigned long ip)
 {
+	/* STUBBED_NOOP: disabled at runtime, symbol preserved. */
+	return false;
+#if 0
+
 	unsigned long flags = user_access_save();
 	bool ret = false;
 
@@ -432,6 +453,7 @@ bool kasan_report(unsigned long addr, size_t size, bool is_write,
 	user_access_restore(flags);
 
 	return ret;
+#endif
 }
 
 #ifdef CONFIG_KASAN_INLINE

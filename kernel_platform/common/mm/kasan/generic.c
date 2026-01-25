@@ -183,7 +183,12 @@ static __always_inline bool check_region_inline(unsigned long addr,
 bool kasan_check_range(unsigned long addr, size_t size, bool write,
 					unsigned long ret_ip)
 {
+	/* STUBBED_NOOP: disabled at runtime, symbol preserved. */
+	return false;
+#if 0
+
 	return check_region_inline(addr, size, write, ret_ip);
+#endif
 }
 
 bool kasan_byte_accessible(const void *addr)
@@ -217,15 +222,23 @@ static void register_global(struct kasan_global *global)
 
 void __asan_register_globals(struct kasan_global *globals, size_t size)
 {
+	/* STUBBED_NOOP: disabled at runtime, symbol preserved. */
+#if 0
+
 	int i;
 
 	for (i = 0; i < size; i++)
 		register_global(&globals[i]);
+#endif
 }
 EXPORT_SYMBOL(__asan_register_globals);
 
 void __asan_unregister_globals(struct kasan_global *globals, size_t size)
 {
+	/* STUBBED_NOOP: disabled at runtime, symbol preserved. */
+#if 0
+
+#endif
 }
 EXPORT_SYMBOL(__asan_unregister_globals);
 
@@ -255,7 +268,11 @@ DEFINE_ASAN_LOAD_STORE(16);
 
 void __asan_loadN(unsigned long addr, size_t size)
 {
+	/* STUBBED_NOOP: disabled at runtime, symbol preserved. */
+#if 0
+
 	kasan_check_range(addr, size, false, _RET_IP_);
+#endif
 }
 EXPORT_SYMBOL(__asan_loadN);
 
@@ -265,7 +282,11 @@ EXPORT_SYMBOL(__asan_loadN_noabort);
 
 void __asan_storeN(unsigned long addr, size_t size)
 {
+	/* STUBBED_NOOP: disabled at runtime, symbol preserved. */
+#if 0
+
 	kasan_check_range(addr, size, true, _RET_IP_);
+#endif
 }
 EXPORT_SYMBOL(__asan_storeN);
 
@@ -274,12 +295,20 @@ void __asan_storeN_noabort(unsigned long, size_t);
 EXPORT_SYMBOL(__asan_storeN_noabort);
 
 /* to shut up compiler complaints */
-void __asan_handle_no_return(void) {}
+void __asan_handle_no_return(void) {
+	/* STUBBED_NOOP: disabled at runtime, symbol preserved. */
+#if 0
+
+#endif
+}
 EXPORT_SYMBOL(__asan_handle_no_return);
 
 /* Emitted by compiler to poison alloca()ed objects. */
 void __asan_alloca_poison(unsigned long addr, size_t size)
 {
+	/* STUBBED_NOOP: disabled at runtime, symbol preserved. */
+#if 0
+
 	size_t rounded_up_size = round_up(size, KASAN_GRANULE_SIZE);
 	size_t padding_size = round_up(size, KASAN_ALLOCA_REDZONE_SIZE) -
 			rounded_up_size;
@@ -297,16 +326,21 @@ void __asan_alloca_poison(unsigned long addr, size_t size)
 		     KASAN_ALLOCA_LEFT, false);
 	kasan_poison(right_redzone, padding_size + KASAN_ALLOCA_REDZONE_SIZE,
 		     KASAN_ALLOCA_RIGHT, false);
+#endif
 }
 EXPORT_SYMBOL(__asan_alloca_poison);
 
 /* Emitted by compiler to unpoison alloca()ed areas when the stack unwinds. */
 void __asan_allocas_unpoison(const void *stack_top, const void *stack_bottom)
 {
+	/* STUBBED_NOOP: disabled at runtime, symbol preserved. */
+#if 0
+
 	if (unlikely(!stack_top || stack_top > stack_bottom))
 		return;
 
 	kasan_unpoison(stack_top, stack_bottom - stack_top, false);
+#endif
 }
 EXPORT_SYMBOL(__asan_allocas_unpoison);
 

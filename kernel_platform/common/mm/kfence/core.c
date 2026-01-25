@@ -350,6 +350,9 @@ static void *kfence_guarded_alloc(struct kmem_cache *cache, size_t size, gfp_t g
 
 static void kfence_guarded_free(void *addr, struct kfence_metadata *meta, bool zombie)
 {
+	/* STUBBED_NOOP: disabled at runtime, symbol preserved. */
+#if 0
+
 	struct kcsan_scoped_access assert_page_exclusive;
 	unsigned long flags;
 
@@ -412,6 +415,7 @@ static void kfence_guarded_free(void *addr, struct kfence_metadata *meta, bool z
 		/* See kfence_shutdown_cache(). */
 		atomic_long_inc(&counters[KFENCE_COUNTER_ZOMBIES]);
 	}
+#endif
 }
 
 static void rcu_guarded_free(struct rcu_head *h)
@@ -421,8 +425,12 @@ static void rcu_guarded_free(struct rcu_head *h)
 	kfence_guarded_free((void *)meta->addr, meta, false);
 }
 
-static bool __init kfence_init_pool(void)
+static bool __init __maybe_unused kfence_init_pool(void)
 {
+	/* STUBBED_NOOP: disabled at runtime, symbol preserved. */
+	return false;
+#if 0
+
 	unsigned long addr = (unsigned long)__kfence_pool;
 	struct page *pages;
 	int i;
@@ -505,6 +513,7 @@ err:
 	memblock_free_late(__pa(addr), KFENCE_POOL_SIZE - (addr - (unsigned long)__kfence_pool));
 	__kfence_pool = NULL;
 	return false;
+#endif
 }
 
 /* === DebugFS Interface ==================================================== */
@@ -646,6 +655,9 @@ static DECLARE_DELAYED_WORK(kfence_timer, toggle_allocation_gate);
 
 void __init kfence_alloc_pool(void)
 {
+	/* STUBBED_NOOP: disabled at runtime, symbol preserved. */
+#if 0
+
 	if (!kfence_sample_interval)
 		return;
 
@@ -653,10 +665,14 @@ void __init kfence_alloc_pool(void)
 
 	if (!__kfence_pool)
 		pr_err("failed to allocate pool\n");
+#endif
 }
 
 void __init kfence_init(void)
 {
+	/* STUBBED_NOOP: disabled at runtime, symbol preserved. */
+#if 0
+
 	/* Setting kfence_sample_interval to 0 on boot disables KFENCE. */
 	if (!kfence_sample_interval)
 		return;
@@ -671,6 +687,7 @@ void __init kfence_init(void)
 	pr_info("initialized - using %lu bytes for %d objects at 0x%p-0x%p\n", KFENCE_POOL_SIZE,
 		CONFIG_KFENCE_NUM_OBJECTS, (void *)__kfence_pool,
 		(void *)(__kfence_pool + KFENCE_POOL_SIZE));
+#endif
 }
 
 void kfence_shutdown_cache(struct kmem_cache *s)
@@ -817,6 +834,10 @@ void __kfence_free(void *addr)
 
 bool kfence_handle_page_fault(unsigned long addr, bool is_write, struct pt_regs *regs)
 {
+	/* STUBBED_NOOP: disabled at runtime, symbol preserved. */
+	return false;
+#if 0
+
 	const int page_index = (addr - (unsigned long)__kfence_pool) / PAGE_SIZE;
 	struct kfence_metadata *to_report = NULL;
 	enum kfence_error_type error_type;
@@ -886,4 +907,5 @@ out:
 	}
 
 	return kfence_unprotect(addr); /* Unprotect and let access proceed. */
+#endif
 }

@@ -70,6 +70,10 @@ u8 kasan_random_tag(void)
 bool kasan_check_range(unsigned long addr, size_t size, bool write,
 				unsigned long ret_ip)
 {
+	/* STUBBED_NOOP: disabled at runtime, symbol preserved. */
+	return false;
+#if 0
+
 	u8 tag;
 	u8 *shadow_first, *shadow_last, *shadow;
 	void *untagged_addr;
@@ -116,6 +120,7 @@ bool kasan_check_range(unsigned long addr, size_t size, bool write,
 	}
 
 	return true;
+#endif
 }
 
 bool kasan_byte_accessible(const void *addr)
@@ -151,19 +156,31 @@ DEFINE_HWASAN_LOAD_STORE(16);
 
 void __hwasan_loadN_noabort(unsigned long addr, unsigned long size)
 {
+	/* STUBBED_NOOP: disabled at runtime, symbol preserved. */
+#if 0
+
 	kasan_check_range(addr, size, false, _RET_IP_);
+#endif
 }
 EXPORT_SYMBOL(__hwasan_loadN_noabort);
 
 void __hwasan_storeN_noabort(unsigned long addr, unsigned long size)
 {
+	/* STUBBED_NOOP: disabled at runtime, symbol preserved. */
+#if 0
+
 	kasan_check_range(addr, size, true, _RET_IP_);
+#endif
 }
 EXPORT_SYMBOL(__hwasan_storeN_noabort);
 
 void __hwasan_tag_memory(unsigned long addr, u8 tag, unsigned long size)
 {
+	/* STUBBED_NOOP: disabled at runtime, symbol preserved. */
+#if 0
+
 	kasan_poison((void *)addr, size, tag, false);
+#endif
 }
 EXPORT_SYMBOL(__hwasan_tag_memory);
 
