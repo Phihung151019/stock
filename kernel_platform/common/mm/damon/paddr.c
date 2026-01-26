@@ -8,6 +8,7 @@
 #define pr_fmt(fmt) "damon-pa: " fmt
 
 #include <linux/mmu_notifier.h>
+#include <linux/hash.h>
 #include <linux/page_idle.h>
 #include <linux/pagemap.h>
 #include <linux/rmap.h>
@@ -15,6 +16,69 @@
 
 #include "../internal.h"
 #include "prmtv-common.h"
+
+/*
+ * Fast-path cache to avoid repeated rmap/page-table walks within a single
+ * sampling round.  Fixed-size + linear probe to keep overhead low and avoid
+ * allocations on hot paths.
+ */
+#define DAMON_PA_CACHE_BITS	8	/* 256 entries */
+#define DAMON_PA_CACHE_SIZE	(1UL << DAMON_PA_CACHE_BITS)
+#define DAMON_PA_CACHE_PROBES	4
+
+struct damon_pa_cache_ent {
+	unsigned long	gen;
+	unsigned long	pfn;
+	unsigned long	page_sz;     /* 0 means 'young' not computed yet */
+	bool		accessed;
+	bool		mkold_done;
+};
+
+static struct damon_pa_cache_ent damon_pa_cache[DAMON_PA_CACHE_SIZE];
+static unsigned long damon_pa_cache_gen;
+
+static __always_inline struct damon_pa_cache_ent *damon_pa_cache_lookup(
+		unsigned long pfn)
+{
+	unsigned long idx = hash_long(pfn, DAMON_PA_CACHE_BITS);
+	int i;
+
+	for (i = 0; i < DAMON_PA_CACHE_PROBES; i++) {
+		struct damon_pa_cache_ent *e =
+			&damon_pa_cache[(idx + i) & (DAMON_PA_CACHE_SIZE - 1)];
+
+		if (e->gen != damon_pa_cache_gen)
+			continue;
+		if (e->pfn == pfn)
+			return e;
+	}
+	return NULL;
+}
+
+static __always_inline struct damon_pa_cache_ent *damon_pa_cache_get_slot(
+		unsigned long pfn)
+{
+	unsigned long idx = hash_long(pfn, DAMON_PA_CACHE_BITS);
+	int i;
+
+	for (i = 0; i < DAMON_PA_CACHE_PROBES; i++) {
+		struct damon_pa_cache_ent *e =
+			&damon_pa_cache[(idx + i) & (DAMON_PA_CACHE_SIZE - 1)];
+
+		if (e->gen != damon_pa_cache_gen)
+			return e;
+	}
+	/* No stale slot in probe window; overwrite the first one. */
+	return &damon_pa_cache[idx & (DAMON_PA_CACHE_SIZE - 1)];
+}
+
+static __always_inline void damon_pa_cache_round_begin(void)
+{
+	/* Logical clear without touching memory.  Never use gen==0 as active. */
+	damon_pa_cache_gen++;
+	if (!damon_pa_cache_gen)
+		damon_pa_cache_gen = 1;
+}
 
 static bool __damon_pa_mkold(struct page *page, struct vm_area_struct *vma,
 		unsigned long addr, void *arg)
@@ -68,15 +132,33 @@ out:
 static void __damon_pa_prepare_access_check(struct damon_ctx *ctx,
 					    struct damon_region *r)
 {
+	unsigned long pfn;
+	struct damon_pa_cache_ent *e;
+
 	r->sampling_addr = damon_rand(r->ar.start, r->ar.end);
+	pfn = PHYS_PFN(r->sampling_addr);
+
+	/* Deduplicate mkold within the round to avoid repeated rmap walks. */
+	e = damon_pa_cache_lookup(pfn);
+	if (e && e->mkold_done)
+		return;
 
 	damon_pa_mkold(r->sampling_addr);
+
+	e = damon_pa_cache_get_slot(pfn);
+	e->gen = damon_pa_cache_gen;
+	e->pfn = pfn;
+	e->page_sz = 0;
+	e->accessed = false;
+	e->mkold_done = true;
 }
 
 static void damon_pa_prepare_access_checks(struct damon_ctx *ctx)
 {
 	struct damon_target *t;
 	struct damon_region *r;
+
+	damon_pa_cache_round_begin();
 
 	damon_for_each_target(t, ctx) {
 		damon_for_each_region(r, t)
@@ -155,8 +237,9 @@ static bool damon_pa_young(unsigned long paddr, unsigned long *page_sz)
 
 	need_lock = !PageAnon(page) || PageKsm(page);
 	if (need_lock && !trylock_page(page)) {
+		*page_sz = PAGE_SIZE;
 		put_page(page);
-		return NULL;
+		return false;
 	}
 
 	rmap_walk(page, &rwc);
@@ -173,23 +256,48 @@ out:
 static void __damon_pa_check_access(struct damon_ctx *ctx,
 				    struct damon_region *r)
 {
-	static unsigned long last_addr;
-	static unsigned long last_page_sz = PAGE_SIZE;
-	static bool last_accessed;
+	unsigned long pfn = PHYS_PFN(r->sampling_addr);
+	struct damon_pa_cache_ent *e;
+	unsigned long page_sz = PAGE_SIZE;
+	bool accessed;
 
-	/* If the region is in the last checked page, reuse the result */
-	if (ALIGN_DOWN(last_addr, last_page_sz) ==
-				ALIGN_DOWN(r->sampling_addr, last_page_sz)) {
-		if (last_accessed)
+	/* Fast-path: reuse 'young' result if already computed for this PFN. */
+	e = damon_pa_cache_lookup(pfn);
+	if (e && e->page_sz) {
+		accessed = e->accessed;
+		if (accessed)
 			r->nr_accesses++;
 		return;
 	}
 
-	last_accessed = damon_pa_young(r->sampling_addr, &last_page_sz);
-	if (last_accessed)
-		r->nr_accesses++;
+	accessed = damon_pa_young(r->sampling_addr, &page_sz);
 
-	last_addr = r->sampling_addr;
+	/* Cache the computed result for this round. */
+	e = damon_pa_cache_get_slot(pfn);
+	e->gen = damon_pa_cache_gen;
+	e->pfn = pfn;
+	e->page_sz = page_sz;
+	e->accessed = accessed;
+	e->mkold_done = true;
+
+	/*
+	 * For huge mappings, also cache the base PFN so other samples within the
+	 * same huge page can reuse the result even if their PFNs differ.
+	 */
+	if (page_sz > PAGE_SIZE) {
+		unsigned long npages = page_sz >> PAGE_SHIFT;
+		unsigned long base_pfn = pfn & ~(npages - 1);
+
+		e = damon_pa_cache_get_slot(base_pfn);
+		e->gen = damon_pa_cache_gen;
+		e->pfn = base_pfn;
+		e->page_sz = page_sz;
+		e->accessed = accessed;
+		e->mkold_done = true;
+	}
+
+	if (accessed)
+		r->nr_accesses++;
 }
 
 static unsigned int damon_pa_check_accesses(struct damon_ctx *ctx)
